@@ -12,7 +12,7 @@
             var exports = JSObject.CreateObject();
 
             exports.DefineMember("WebBrowser")
-                .Assign(TypeProxy.GetConstructor(typeof(Library.WebBrowser)));
+                .Assign(TypeProxy.GetConstructor(typeof(WebBrowser)));
 
             return exports;
         }
@@ -20,7 +20,11 @@
         [ModuleInitialize]
         public static void Initialize()
         {
-            var cef = new CefSettings();
+            var cef = new CefSettings
+            {
+                LogSeverity = LogSeverity.Verbose
+            };
+
             Cef.Initialize(cef, true, true);
         }
 

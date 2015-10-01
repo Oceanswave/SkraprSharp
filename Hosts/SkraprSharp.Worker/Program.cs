@@ -12,8 +12,6 @@
             {
                 var ctx = Skrapr.InitializeSkraprContext();
 
-                try
-                {
                     //Console.WriteLine("Running...");
                     //var result = ctx.Eval("var cef = require('Cef'); var browser = new cef.WebBrowser(); browser.waitForBrowserInitialization(); browser.loadPage('http://www.google.com'); /*browser.jQuerify();*/ browser.takeScreenshot(); browser.dispose();");
                     //Console.WriteLine(result.ToString());
@@ -23,16 +21,18 @@
                         input = Console.ReadLine();
                         if (input != "Q")
                         {
-                            var inputResult = ctx.Eval(input);
-                            Console.WriteLine(inputResult.ToString());
+                            try
+                            {
+                                var inputResult = ctx.Eval(input);
+                                Console.WriteLine(inputResult.ToString());
+                            }
+                            catch (JSException ex)
+                            {
+                                Console.Error.WriteLine(ex.Message);
+                            }
                         }
                     }
                     while (input != "Q");
-                }
-                catch(JSException ex)
-                {
-                    Console.Error.WriteLine(ex.Message);
-                }
             }
             finally
             {

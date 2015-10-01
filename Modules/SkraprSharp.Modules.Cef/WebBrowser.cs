@@ -1,4 +1,4 @@
-﻿namespace SkraprSharp.Library
+﻿namespace SkraprSharp.Modules.Cef
 {
     using CefSharp;
     using CefSharp.OffScreen;
@@ -6,26 +6,62 @@
     using NiL.JS.Core;
     using NiL.JS.Core.Modules;
     using NiL.JS.Core.TypeProxing;
+    using Library;
     using System;
     using System.Diagnostics;
     using System.Drawing;
     using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
 
     public sealed class WebBrowser : CustomType, IDisposable
     {
-        private readonly ChromiumWebBrowser m_webBrowser;
+        private ChromiumWebBrowser m_webBrowser;
 
         [DoNotEnumerate]
-        public WebBrowser(Arguments args)
+        [Hidden]
+        public WebBrowser()
+        {
+            DispatcherThread = new DispatcherThread();
+        }
+
+        [DoNotEnumerate]
+        public WebBrowser(Arguments args) : this()
         {
             var address = args["address"].Value as string;
 
-            //TODO: Add ability to define browser settings.
-            if (address != null)
-                m_webBrowser = new ChromiumWebBrowser(address);
-            else
-                m_webBrowser = new ChromiumWebBrowser();
+            DispatcherThread.StartNew(() =>
+            {
+                //TODO: Add ability to define browser settings.
+                if (address != null)
+                    m_webBrowser = new ChromiumWebBrowser(address);
+                else
+                    m_webBrowser = new ChromiumWebBrowser("");
+
+            }).Wait();
+
+            //Ensure that the web browser is initialized.
+            using (var evt = new ManualResetEvent(false))
+            {
+                m_webBrowser.BrowserInitialized += (o, e) => evt.Set();
+
+                DispatcherThread.StartNew(() =>
+                {
+
+                    if (m_webBrowser.IsBrowserInitialized)
+                    {
+                        evt.Set();
+                    }
+                });
+
+                evt.WaitOne();
+            }
+        }
+
+        private DispatcherThread DispatcherThread
+        {
+            get;
+            set;
         }
 
         public bool isBrowserInitialized
@@ -38,21 +74,36 @@
             get { return m_webBrowser.IsLoading; }
         }
 
-        public void evaluateScript(string script)
+        public Promise evaluateScript(string script)
         {
-            m_webBrowser.EvaluateScriptAsync(script).Wait();
+            var task = m_webBrowser.EvaluateScriptAsync(script)
+                .ContinueWith<JSObject>(t =>
+                {
+                    return this;
+                });
+            return new Promise(task);
         }
 
-        public void loadPage(string address)
+        public Promise loadPage(string address)
         {
-            m_webBrowser.LoadPageAsync(address).Wait();
+            var task = m_webBrowser.LoadPageAsync(address)
+                .ContinueWith<JSObject>(t =>
+                {
+                    return this;
+                });
+
+            return new Promise(task);
         }
 
-        public string jQuerify()
+        public Promise jQuerify()
         {
-            var jQuerify = m_webBrowser.JQuerifyAsync();
-            jQuerify.Wait();
-            return jQuerify.Result;
+            var task = m_webBrowser.JQuerifyAsync()
+                .ContinueWith<JSObject>(t =>
+                {
+                    return t.Result;
+                });
+
+            return new Promise(task);
         }
 
         public void redraw()
@@ -60,11 +111,15 @@
             m_webBrowser.Redraw();
         }
 
-        public void takeScreenshot()
+        public Promise takeScreenshot()
         {
-            var task = m_webBrowser.ScreenshotAsync(true);
-            task.Wait(5000);
-            DisplayBitmap(task);
+            var task = m_webBrowser.ScreenshotAsync(true)
+                .ContinueWith<JSObject>(t =>
+                {
+                    DisplayBitmap(t);
+                    return this;
+                });
+            return new Promise(task);
         }
 
         private static void DisplayBitmap(Task<Bitmap> task)
@@ -96,18 +151,30 @@
             Console.WriteLine("Image viewer launched.  Press any key to exit.");
         }
 
-        public void waitUntilLoadedOrTimeout(string timeout)
+        public Promise waitUntilLoadedOrTimeout(string timeout)
         {
             TimeSpan? tsTimeout = null;
             if (!string.IsNullOrEmpty(timeout))
                 tsTimeout = TimeSpan.Parse(timeout);
 
-            m_webBrowser.WaitUntilLoadedOrTimeoutAsync(tsTimeout).Wait();
+            var task = m_webBrowser.WaitUntilLoadedOrTimeoutAsync(tsTimeout)
+                .ContinueWith<JSObject>(t =>
+                {
+                    return this;
+                });
+
+            return new Promise(task);
         }
 
-        public void waitForBrowserInitialization()
+        public Promise waitForBrowserInitialization()
         {
-            m_webBrowser.WaitForBrowserInitializationAsync().Wait();
+            var task = m_webBrowser.WaitForBrowserInitializationAsync()
+                .ContinueWith<JSObject>(t =>
+                {
+                    return this;
+                });
+
+            return new Promise(task);
         }
 
         public void dispose()
@@ -124,7 +191,17 @@
             {
                 if (disposing)
                 {
-                    m_webBrowser.Dispose();
+                    if (m_webBrowser != null)
+                    {
+                        m_webBrowser.Dispose();
+                        m_webBrowser = null;
+                    }
+
+                    if (DispatcherThread != null)
+                    {
+                        DispatcherThread.Dispose();
+                        m_webBrowser = null;
+                    }
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.

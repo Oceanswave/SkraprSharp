@@ -22,8 +22,6 @@
 
         public static Context InitializeSkraprContext(string binDirectory = null, string modulesDirectoryName = "modules")
         {
-            var ctx = new Context();
-
             if (string.IsNullOrWhiteSpace(binDirectory))
                 binDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             
@@ -64,6 +62,9 @@
                 }
             }
 
+            var ctx = new Context();
+
+            ctx.AttachModule(typeof(Library.Promise));
             ctx.DefineVariable("require").Assign(new ExternalFunction(Library.GlobalFunctions.require));
 
             return ctx;

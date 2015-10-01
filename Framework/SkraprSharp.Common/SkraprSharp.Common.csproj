@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Library\GlobalFunctions.cs" />
+    <Compile Include="Library\Promise.cs" />
     <Compile Include="Models\Authentication.cs" />
     <Compile Include="Models\CrawlRule.cs" />
     <Compile Include="Models\Credentials.cs" />
