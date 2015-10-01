@@ -64,7 +64,7 @@
     <Compile Include="ModuleCleanupAttribute.cs" />
     <Compile Include="ModuleInitializeAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Skrapr.cs" />
+    <Compile Include="SkraprContext.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Imports\Nil.JS\" />

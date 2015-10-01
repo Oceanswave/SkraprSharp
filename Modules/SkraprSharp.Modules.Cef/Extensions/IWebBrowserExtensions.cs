@@ -330,7 +330,7 @@ getScript('{{ScriptUri}}', function() { {{SuccessCallback}} });
             }
             else
             {
-                throw new TimeoutException("Timeed out while waiting for script to load.");
+                throw new TimeoutException("Timed out while waiting for script to load.");
             }
         }
 

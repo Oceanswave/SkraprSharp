@@ -8,70 +8,38 @@
         [STAThread]
         public static void Main(string[] args)
         {
+            //Console.TreatControlCAsInput = true;
+            var skraprContext = new SkraprContext();
+
             try
             {
-                var ctx = Skrapr.InitializeSkraprContext();
+                var ctx = skraprContext.Initialize();
 
-                    //Console.WriteLine("Running...");
-                    //var result = ctx.Eval("var cef = require('Cef'); var browser = new cef.WebBrowser(); browser.waitForBrowserInitialization(); browser.loadPage('http://www.google.com'); /*browser.jQuerify();*/ browser.takeScreenshot(); browser.dispose();");
-                    //Console.WriteLine(result.ToString());
-                    string input;
-                    do
+                string input;
+                do
+                {
+                    Console.Write(">");
+                    input = Console.ReadLine();
+
+                    if (input != "Q")
                     {
-                        input = Console.ReadLine();
-                        if (input != "Q")
+                        try
                         {
-                            try
-                            {
-                                var inputResult = ctx.Eval(input);
-                                Console.WriteLine(inputResult.ToString());
-                            }
-                            catch (JSException ex)
-                            {
-                                Console.Error.WriteLine(ex.Message);
-                            }
+                            var inputResult = ctx.Eval(input);
+                            Console.WriteLine(inputResult.ToString());
+                        }
+                        catch (JSException ex)
+                        {
+                            Console.Error.WriteLine(ex.Message);
                         }
                     }
-                    while (input != "Q");
+                }
+                while (input != "Q");
             }
             finally
             {
-                Skrapr.ShutdownSkraprContext();
+                skraprContext.Shutdown();
             }
         }
-
-        //private static async void MainAsync(string cachePath = "cachePath1", double zoomLevel = 1.0)
-        //{
-        //    var browserSettings = new BrowserSettings();
-        //    //Reduce rendering speed to one frame per second so it's easier to take screen shots
-        //    browserSettings.WindowlessFrameRate = 1;
-        //    var requestContextSettings = new RequestContextSettings { CachePath = cachePath };
-
-        //    // RequestContext can be shared between browser instances and allows for custom settings
-        //    // e.g. CachePath
-        //    using (var requestContext = new RequestContext(requestContextSettings))
-        //    using (var browser = new ChromiumWebBrowser("", browserSettings, requestContext))
-        //    {
-        //        await browser.WaitForBrowserInitializationAsync();
-
-        //        await browser.LoadPageAsync(zoomLevel: 3);
-
-        //        await browser.ResizeToContentAsync();
-
-        //        await browser.LoadPageAsync(zoomLevel: 3, ignoreCache: false);
-
-        //        var jQueryVersion = await browser.JQuerifyAsync();
-        //        Debug.Assert(jQueryVersion == "1.11.1");
-
-        //        // For Google.com pre-populate the search text box using jQuery;
-        //        await browser.EvaluateScriptAsync("jQuery('#lst-ib').val('CefSharp Was Here!')");
-
-        //        browser.Redraw();
-
-        //        // Wait for the screenshot to be taken,
-        //        // if one exists ignore it, wait for a new one to make sure we have the most up to date
-        //        await browser.ScreenshotAsync(true).ContinueWith(DisplayBitmap);
-        //    }
-        //}
     }
 }

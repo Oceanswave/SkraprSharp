@@ -13,6 +13,7 @@
     using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
+    using NiL.JS.BaseLibrary;
 
     public sealed class WebBrowser : CustomType, IDisposable
     {
@@ -22,6 +23,7 @@
         [Hidden]
         public WebBrowser()
         {
+            //TODO: Register this object for SkraprContext.ensureDisposal
             DispatcherThread = new DispatcherThread();
         }
 
@@ -79,7 +81,11 @@
             var task = m_webBrowser.EvaluateScriptAsync(script)
                 .ContinueWith<JSObject>(t =>
                 {
-                    return this;
+                    var jsResult = t.Result;
+                    if (jsResult.Success)
+                        return jsResult.Result.ToString();
+                    else
+                        throw new JSException(new Error(jsResult.Message));
                 });
             return new Promise(task);
         }
@@ -92,6 +98,16 @@
                     return this;
                 });
 
+            return new Promise(task);
+        }
+
+        public Promise injectScript(string scriptUrl)
+        {
+            var task = m_webBrowser.InjectScriptAsync(scriptUrl, matchScheme: true)
+                .ContinueWith<JSObject>(t =>
+                {
+                    return this;
+                });
             return new Promise(task);
         }
 
@@ -113,6 +129,9 @@
 
         public Promise takeScreenshot()
         {
+            //Force the browser to redraw. Without this call, ScreenshotAsync blocks indefinately.
+            m_webBrowser.Redraw();
+
             var task = m_webBrowser.ScreenshotAsync(true)
                 .ContinueWith<JSObject>(t =>
                 {
@@ -147,8 +166,6 @@
 
             // Tell Windows to launch the saved image.
             Process.Start(screenshotPath);
-
-            Console.WriteLine("Image viewer launched.  Press any key to exit.");
         }
 
         public Promise waitUntilLoadedOrTimeout(string timeout)

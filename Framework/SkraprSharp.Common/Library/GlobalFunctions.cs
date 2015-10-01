@@ -37,8 +37,6 @@
             if (module != null)
                 return module.GetExports(thisBind);
 
-            //TODO: Do we have to ctx.AttachModule(typeof(Library.WebBrowser));??
-
             return JSObject.Undefined;
         }
     }

@@ -5,6 +5,7 @@
     using Ninject;
     using Ninject.Extensions.Conventions;
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -12,15 +13,17 @@
     /// <summary>
     /// Represents top-level functions associated with a Skrapr.
     /// </summary>
-    public class Skrapr
+    public sealed class SkraprContext
     {
-        public static IKernel Kernel
+        private List<IDisposable> m_ensureDisposedObjects = new List<IDisposable>();
+
+        public IKernel Kernel
         {
             get;
             set;
         }
 
-        public static Context InitializeSkraprContext(string binDirectory = null, string modulesDirectoryName = "modules")
+        public Context Initialize(string binDirectory = null, string modulesDirectoryName = "modules")
         {
             if (string.IsNullOrWhiteSpace(binDirectory))
                 binDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
@@ -70,8 +73,24 @@
             return ctx;
         }
 
-        public static void ShutdownSkraprContext()
+        public void EnsureDisposed(IDisposable obj)
         {
+            if (m_ensureDisposedObjects.Contains(obj) == false)
+                m_ensureDisposedObjects.Add(obj);
+        }
+
+        /// <summary>
+        /// Disposes of any resources, executes module cleanup routines.
+        /// </summary>
+        public void Shutdown()
+        {
+            //For all objects registered with ensure disposed, dispose of them
+            //TODO: Check for an 'IsDisposed' method and don't disposed if the value is true.
+            foreach (var obj in m_ensureDisposedObjects) {
+                if (obj != null)
+                    obj.Dispose();
+            }
+
             //Execute ModuleCleanup methods on all modules.
             var bindings = Kernel.GetBindings(typeof(IModule));
             foreach (var binding in bindings)
