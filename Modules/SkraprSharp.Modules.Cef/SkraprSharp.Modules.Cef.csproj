@@ -48,6 +48,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CefFunctions.cs" />
     <Compile Include="CefModule.cs" />
     <Compile Include="DispatcherThread.cs" />
     <Compile Include="Extensions\ChromiumWebBrowserExtensions.cs" />

@@ -11,8 +11,11 @@
         {
             var exports = JSObject.CreateObject();
 
-            exports.DefineMember("WebBrowser")
-                .Assign(TypeProxy.GetConstructor(typeof(WebBrowser)));
+            exports.DefineMember("settings")
+                .Assign(new CefFunctions().__proto__ = TypeProxy.GetPrototype(typeof(CefFunctions)));
+
+            exports.DefineMember("WebBrowser");
+            exports["WebBrowser"] = TypeProxy.GetConstructor(typeof(WebBrowser));
 
             return exports;
         }
